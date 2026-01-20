@@ -1,0 +1,59 @@
+:root {
+  /* Colors */
+  --bg-base: #101010;
+  --bg-surface: #1C1C1E;
+  --primary: #D4A373; /* Coffee Gold */
+  --primary-dim: #A87F56;
+  --accent: #E9C46A;
+  --text-main: #FFFFFF;
+  --text-secondary: #8E8E93;
+  --divider: #38383A;
+  
+  /* Functional Colors */
+  --sour: #FFD700; /* Yellow for Sour */
+  --bitter: #5D4037; /* Brown/Dark for Bitter (Maybe RED works better for alert?) Let's stick to concept. */
+  --ok: #69F0AE;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-s: 8px;
+  --spacing-m: 16px;
+  --spacing-l: 24px;
+  --spacing-xl: 32px;
+
+  /* Typography */
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-main);
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.container {
+  max-width: 480px; /* Mobile first */
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: var(--spacing-m);
+  background-color: var(--bg-base);
+}
