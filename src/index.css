@@ -1,28 +1,35 @@
 :root {
   /* Colors */
-  --bg-base: #101010;
-  --bg-surface: #1C1C1E;
-  --primary: #D4A373; /* Coffee Gold */
-  --primary-dim: #A87F56;
-  --accent: #E9C46A;
+  --bg-base: #121212;
+  --bg-surface: #1E1E1E;
+
+  /* Vibrant Tastes */
+  --sour: #FFD700;
+  /* Gold/Yellow */
+  --bitter: #D84315;
+  /* Deep Orange/Red (More visible than brown) */
+  --weak: #00B0FF;
+  /* Bright Blue */
+  --strong: #76FF03;
+  /* Neon Green (or maybe purple for separate logic? Let's stick to plan: Purple/Red) */
+  --strong-color: #D500F9;
+  /* Purple */
+
+  --ok: #00E676;
+  /* Bright Green */
+
   --text-main: #FFFFFF;
-  --text-secondary: #8E8E93;
-  --divider: #38383A;
-  
-  /* Functional Colors */
-  --sour: #FFD700; /* Yellow for Sour */
-  --bitter: #5D4037; /* Brown/Dark for Bitter (Maybe RED works better for alert?) Let's stick to concept. */
-  --ok: #69F0AE;
+  --text-secondary: #B0BEC5;
+  --divider: #37474F;
+
+  /* Typography */
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
 
   /* Spacing */
-  --spacing-xs: 4px;
   --spacing-s: 8px;
   --spacing-m: 16px;
   --spacing-l: 24px;
   --spacing-xl: 32px;
-
-  /* Typography */
-  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 * {
@@ -39,7 +46,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   margin: 0;
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -51,7 +60,8 @@ button {
 }
 
 .container {
-  max-width: 480px; /* Mobile first */
+  max-width: 480px;
+  /* Mobile first */
   margin: 0 auto;
   min-height: 100vh;
   padding: var(--spacing-m);
