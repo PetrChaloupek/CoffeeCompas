@@ -1,5 +1,5 @@
 
-export function RecipeInput({ dose, yield: yieldValue, time, temperature, coffeeName, onDoseChange, onYieldChange, onTimeChange, onTemperatureChange, onNameChange, method }) {
+export function RecipeInput({ dose, yieldValue, time, temperature, coffeeName, onDoseChange, onYieldChange, onTimeChange, onTemperatureChange, onNameChange, method }) {
 
   // Calculate ratio
   const ratio = (dose && yieldValue)
@@ -139,7 +139,7 @@ export function RecipeInput({ dose, yield: yieldValue, time, temperature, coffee
         input:focus {
           outline: none;
           border-color: var(--primary);
-          background: #fff;
+          background: var(--bg-surface);
         }
 
         /* Remove arrows from number input */

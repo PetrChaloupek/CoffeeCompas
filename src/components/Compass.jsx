@@ -3,6 +3,9 @@ import { getRecommendation, TASTE_PROFILE, TASTE_GOAL } from '../lib/coffee-logi
 import { RecipeInput } from './RecipeInput';
 import { History } from './History';
 import { Icon } from './Icon';
+import { Analysis } from './Analysis';
+
+
 
 export function Compass() {
   const [method, setMethod] = useState('espresso'); // 'espresso' or 'filter'
@@ -19,6 +22,15 @@ export function Compass() {
 
   // History State
   const [logs, setLogs] = useState([]);
+
+  const handleRecipeApply = (rec) => {
+    setDose(rec.dose);
+    setYieldValue(rec.yield);
+    setTime(rec.time);
+    if (rec.temp) setTemperature(rec.temp);
+    // Optional: Show alert with the detail explanation
+    alert(`Applied Smart Recipe:\n${rec.detail}`);
+  };
 
   // Load logs on mount
   useEffect(() => {
@@ -129,9 +141,11 @@ export function Compass() {
         </button>
       </div>
 
+
+
       <RecipeInput
         dose={dose}
-        yield={yieldValue}
+        yieldValue={yieldValue}
         time={time}
         temperature={temperature}
         coffeeName={coffeeName}
@@ -174,6 +188,12 @@ export function Compass() {
               onClick={() => handleTasteSelect(TASTE_PROFILE.ASTRINGENT)}>
               <Icon name="astringent" />
               <span className="label">Dry / Astr.</span>
+            </button>
+            <button
+              className="taste-btn muddled"
+              onClick={() => handleTasteSelect(TASTE_PROFILE.MUDDLED)}>
+              <Icon name="ghost" />{/* Reusing ghost/hollow vibe or create new icon */}
+              <span className="label">Muddled / Heavy</span>
             </button>
 
             {/* Row 3: Strength/Body */}
@@ -248,6 +268,40 @@ export function Compass() {
             <h3>{recommendation.message}</h3>
             {recommendation.detail && <p className="detail">{recommendation.detail}</p>}
 
+            {/* Metrics Display */}
+            {recommendation.metrics && (
+              <div className="metrics-container">
+                <div className="metric-row">
+                  <span>Ratio: <strong>1:{recommendation.metrics.ratio.toFixed(1)}</strong></span>
+                  <span>Flow: <strong>{recommendation.metrics.flowRate.toFixed(1)} g/s</strong></span>
+                </div>
+                {recommendation.metrics.flowRate > 0 && (
+                  <div className="flow-gauge">
+                    <div className="gauge-bar">
+                      <div className="zone red" title="Choked (<1.0)"></div>
+                      <div className="zone green" title="Standard (1.2-1.8)"></div>
+                      <div className="zone blue" title="Turbo (1.9-2.5)"></div>
+                      <div className="zone purple" title="Fast (>3.0)"></div>
+                    </div>
+                    <div
+                      className="gauge-marker"
+                      style={{
+                        left: `${Math.min(Math.max((recommendation.metrics.flowRate / 3.5) * 100, 0), 100)}%`
+                      }}
+                    >
+                      ▲
+                    </div>
+                  </div>
+                )}
+                <div className="flow-legend">
+                  <div className="legend-item"><span className="dot red"></span>Ristretto Zone</div>
+                  <div className="legend-item"><span className="dot green"></span>Standard Espresso</div>
+                  <div className="legend-item"><span className="dot blue"></span>Modern Espresso</div>
+                  <div className="legend-item"><span className="dot purple"></span>Possible Channeling</div>
+                </div>
+              </div>
+            )}
+
             <button className="save-btn" onClick={saveLog}>
               Save Log
             </button>
@@ -259,6 +313,7 @@ export function Compass() {
         </div>
       ) : null}
 
+      <Analysis logs={logs} currentCoffee={coffeeName} />
       <History logs={logs} onDelete={deleteLog} />
 
       <style>{`
@@ -428,6 +483,85 @@ export function Compass() {
         
         .reset-btn:hover {
            background: var(--bg-surface-hover);
+        }
+
+        .metrics-container {
+            width: 100%;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--bg-surface-hover);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-around;
+            color: var(--bg-base);
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .flow-gauge {
+            width: 100%;
+            height: 20px;
+            position: relative;
+            margin-top: 4px;
+        }
+
+        .gauge-bar {
+            width: 100%;
+            height: 8px;
+            background: #444;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            margin-top: 6px;
+        }
+
+        .zone { height: 100%; flex: 1; opacity: 0.8; }
+        .zone.red { background: #E63946; flex: 28; } /* 0 - 1.0 */
+        .zone.green { background: #2A9D8F; flex: 23; } /* 1.0 - 1.8 */
+        .zone.blue { background: #457B9D; flex: 20; } /* 1.8 - 2.5 */
+        .zone.purple { background: #9B5DE5; flex: 29; } /* > 2.5 */
+
+        .flow-legend {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 8px;
+          font-size: 0.75rem;
+          color: var(--bg-base);
+          opacity: 0.9;
+          width: 100%;
+          padding: 0 4px;
+        }
+        
+        .legend-item {
+           display: flex;
+           align-items: center;
+           gap: 4px;
+        }
+        
+        .dot {
+           width: 8px;
+           height: 8px;
+           border-radius: 50%;
+        }
+        
+        .dot.red { background: #E63946; }
+        .dot.green { background: #2A9D8F; }
+        .dot.blue { background: #457B9D; }
+        .dot.purple { background: #9B5DE5; }
+
+        .gauge-marker {
+            position: absolute;
+            top: -2px;
+            transform: translateX(-50%);
+            color: var(--primary); /* Orange Arrow */
+            font-size: 14px;
+            transition: left 0.5s ease;
+            pointer-events: none;
         }
 
         .save-btn {

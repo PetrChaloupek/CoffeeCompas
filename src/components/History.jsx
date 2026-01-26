@@ -102,8 +102,10 @@ export function History({ logs, onDelete }) {
 
         .log-taste {
           background: var(--divider);
+          color: var(--bg-base);
           padding: 4px 8px;
           border-radius: 6px;
+          font-weight: 700;
         }
 
         .log-pref {

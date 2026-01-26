@@ -1,5 +1,5 @@
 /**
- * Coffee Compass Logic
+ * Coffee Compass Logic - "The Fixer"
  * 
  * Inputs: Dose, Yield, Time
  * Method: Espresso (default), Filter
@@ -14,7 +14,8 @@ export const TASTE_PROFILE = {
     // Advanced
     SALTY: 'salty',        // Under-extracted / Undersoluble
     HOLLOW: 'hollow',      // Lacks body/complexity
-    ASTRINGENT: 'astringent' // Dry/Sandpapery (Channeling)
+    ASTRINGENT: 'astringent', // Dry/Sandpapery (Channeling)
+    MUDDLED: 'muddled'     // Low Clarity (New)
 };
 
 export const TASTE_GOAL = {
@@ -38,199 +39,145 @@ export const ADJUSTMENT_TYPE = {
  */
 export function getRecommendation(taste, params = {}) {
     const { dose, yield: yieldValue, time, temp, method = 'espresso', goal = TASTE_GOAL.FIX_IT } = params;
-    const isFilter = method === 'filter';
-    const hasTime = time && parseFloat(time) > 0;
+
+    // Parse Inputs
+    const d = parseFloat(dose) || 0;
+    const y = parseFloat(yieldValue) || 0;
+    const t = parseFloat(time) || 0;
     const temperature = temp ? parseFloat(temp) : null;
+    const isFilter = method === 'filter';
+
+    // Calculate Metrics
+    const ratio = (d > 0 && y > 0) ? (y / d) : 0;
+    const flowRate = (y > 0 && t > 0) ? (y / t) : 0;
 
     let rec = {
         type: ADJUSTMENT_TYPE.NONE,
         message: "Keep tasting...",
         icon: "coffee",
-        detail: ""
+        detail: "",
+        metrics: { ratio, flowRate }
     };
 
     if (taste === TASTE_PROFILE.BALANCED) {
-        return { type: ADJUSTMENT_TYPE.NONE, message: "Perfect! Enjoy.", icon: "magic" };
+        return { ...rec, message: "Perfect! Enjoy.", icon: "magic" };
     }
 
-    // Helper for "Just Fix It" vs Specific Goals
+    // =========================================================
+    // SOUR (Under-extracted / Solvent Limited)
+    // =========================================================
+    if (taste === TASTE_PROFILE.SOUR) {
+        rec.icon = "lemon";
+        rec.type = ADJUSTMENT_TYPE.RATIO;
+
+        // Spec: "Increase Yield by ~10-15%"
+        const targetYield = Math.round(y * 1.15);
+        rec.message = `Increase Yield to ~${targetYield}g.`;
+        rec.detail = "Solvent limited. Push extraction further to recruit more sugars. Keep grind size constant.";
+
+        if (isFilter && temperature && temperature < 93) {
+            rec.type = ADJUSTMENT_TYPE.TEMP;
+            rec.message = "Increase Temp & Yield.";
+            rec.detail = "Your water is cold. Heat to 96°C+ and extend the ratio.";
+        }
+    }
+
+    // =========================================================
+    // BITTER (Over-extracted / Dry Distillates)
+    // =========================================================
+    else if (taste === TASTE_PROFILE.BITTER) {
+        rec.icon = "chocolate";
+        rec.type = ADJUSTMENT_TYPE.RATIO;
+
+        // Spec: "Decrease Yield by ~10%"
+        const targetYield = Math.round(y * 0.90);
+        rec.message = `Decrease Yield to ~${targetYield}g.`;
+        rec.detail = "Cut the shot earlier to avoid dry distillates. Keep grind size constant.";
+
+        if (isFilter && temperature && temperature >= 96) {
+            rec.message = "Lower Temp & Decrease Yield.";
+            rec.detail = `Too hot (${temperature}°C). Drop to 93°C and shorten the ratio.`;
+        }
+    }
+
+    // =========================================================
+    // ASTRINGENT (Channeling / Resistance)
+    // =========================================================
+    else if (taste === TASTE_PROFILE.ASTRINGENT) {
+        rec.icon = "cactus";
+        rec.type = ADJUSTMENT_TYPE.GRIND;
+
+        // Spec: Check Flow Rate. If < 1.0, Critical.
+        if (flowRate > 0 && flowRate < 1.0 && !isFilter) {
+            rec.message = "CHOKED: Grind Coarser Immediately.";
+            rec.detail = `Flow Rate is very low (${flowRate.toFixed(1)} g/s). Excessive resistance is causing channeling.`;
+        } else {
+            rec.message = "Grind Coarser.";
+            rec.detail = "Dryness usually comes from channeling or uneven flow. Coarsening helps even out the puck.";
+        }
+    }
+
+    // =========================================================
+    // WEAK (Low TDS)
+    // =========================================================
+    else if (taste === TASTE_PROFILE.WEAK) {
+        rec.icon = "water";
+        rec.type = ADJUSTMENT_TYPE.RATIO;
+
+        // Spec: Increase Dose OR Shorten Ratio
+        rec.message = "Increase Dose +1g.";
+        rec.detail = "Solution is too dilute. Increasing dose increases strength/texture.";
+
+        if (ratio > 2.5 && !isFilter) {
+            rec.message = "Decrease Yield (Shorten Ratio).";
+            rec.detail = "You are running very long. Tighten the ratio (e.g. 1:2) to increase body.";
+        }
+    }
+
+    // =========================================================
+    // MUDDLED / HEAVY (Low Clarity - NEW)
+    // =========================================================
+    else if (taste === TASTE_PROFILE.MUDDLED) {
+        rec.icon = "ghost"; // Reusing ghost for 'muddled/hollow' vibe or we can map a new one
+        rec.type = ADJUSTMENT_TYPE.GRIND;
+
+        rec.message = "Grind Coarser & Aim for Faster Flow.";
+        rec.detail = flowRate > 0
+            ? `Current flow (${flowRate.toFixed(1)} g/s) is likely too slow for clarity. Aim for > 2.0 g/s.`
+            : "Too many fines are blurring the flavor. speed up the shot.";
+    }
 
     // =========================================================
     // SALTY (Under-extracted)
     // =========================================================
-    if (taste === TASTE_PROFILE.SALTY) {
-        rec.icon = "Salt"; // Emoji placeholder, will use text if not mapped
-        rec.type = ADJUSTMENT_TYPE.RATIO;
+    else if (taste === TASTE_PROFILE.SALTY) {
         rec.icon = "salt";
+        rec.type = ADJUSTMENT_TYPE.RATIO;
 
-        if (goal === TASTE_GOAL.ACIDIC) {
-            // User wants Acidic/Fruity. Salty means we are severely under, but we don't want to kill the acid.
-            // Increase Yield (Ratio) is the safest way to clear salt without muting fruit like fine grind might.
-            rec.message = "Increase Yield (More Water).";
-            rec.detail = "Push the extraction further (longer ratio) to dissolve more sugars, clearing the saltiness while highlighting the acidity.";
-        } else if (goal === TASTE_GOAL.SWEET) {
-            // Wants Sweet. Needs SIGNIFICANTLY more extraction.
-            rec.type = ADJUSTMENT_TYPE.GRIND;
-            rec.message = "Grind Finer & Increase Temp.";
-            rec.detail = "You are far from sweetness. You need more contact time and energy to access the sugar.";
-        } else {
-            // Default Fix
-            rec.message = "Increase Yield (More Water).";
-            rec.detail = "Saltiness is early extraction. Run the shot longer to balance it out.";
-            if (isFilter) {
-                if (temperature && temperature < 93) {
-                    rec.message = "Increase Water Temp & Grind Finer.";
-                    rec.detail = `Your water (${temperature}°C) might be too cool to extract properly. Try 96°C+.`;
-                } else {
-                    rec.message = "Grind Finer & Hotter Water.";
-                }
-            }
-        }
+        // Similar to Sour -> Push Yield
+        const targetYield = Math.round(y * 1.2);
+        rec.message = `Increase Yield Significantly (~${targetYield}g).`;
+        rec.detail = "Saltiness is significantly under-extracted. Run it longer.";
     }
 
     // =========================================================
-    // SOUR (Under-extracted)
-    // =========================================================
-    else if (taste === TASTE_PROFILE.SOUR) {
-        rec.type = ADJUSTMENT_TYPE.GRIND;
-        rec.icon = "lemon";
-
-        // Check Temp for Filter first
-        if (isFilter && temperature && temperature < 93) {
-            rec.type = ADJUSTMENT_TYPE.TEMP;
-            rec.message = "Increase Water Temperature.";
-            rec.detail = `Sourness in filter often comes from low temp. You are at ${temperature}°C. Try increasing to 96°C or boiling before grinding finer.`;
-            return rec; // Priority exit
-        }
-
-        if (goal === TASTE_GOAL.BODY) {
-            // Wants Body, but is Sour. 
-            // Grind Finer creates body, but might keep it sour if we don't extract enough.
-            rec.message = "Grind Finer.";
-            rec.detail = "Finer grind increases body and extraction. If that's not enough, increase dose slightly.";
-        } else if (goal === TASTE_GOAL.SWEET) {
-            // Classic under-extraction fix.
-            rec.message = "Grind Finer (or Higher Temp).";
-            rec.detail = "Extract more to move from Sour -> Sweet.";
-        } else {
-            // Default
-            rec.message = "Grind Finer.";
-            rec.detail = isFilter ? "Use hotter water (or boil) or agitate more." : "Or increase yield slightly.";
-
-            if (hasTime) {
-                const t = parseFloat(time);
-                if (!isFilter && t < 25) {
-                    rec.detail = `Shot was fast (${t}s). Grinding finer is definitely the right move.`;
-                }
-            }
-        }
-    }
-
-    // =========================================================
-    // BITTER (Over-extracted)
-    // =========================================================
-    else if (taste === TASTE_PROFILE.BITTER) {
-        rec.type = ADJUSTMENT_TYPE.GRIND;
-        rec.icon = "chocolate";
-
-        // Check Temp for Filter
-        if (isFilter && temperature && temperature >= 96) {
-            rec.type = ADJUSTMENT_TYPE.TEMP;
-            rec.message = "Decrease Water Temperature.";
-            rec.detail = `You are brewing very hot (${temperature}°C). Drop to 90-93°C to reduce bitterness.`;
-            return rec;
-        }
-
-        if (goal === TASTE_GOAL.ACIDIC) {
-            // User wants Acid, has Bitter. Major over-extraction.
-            rec.message = "Grind Coarser Immediately.";
-            rec.detail = "You are crushing the acidity. Coarsen up significantly and maybe lower the temp.";
-        } else if (goal === TASTE_GOAL.BODY) {
-            // Wants Body, but is Bitter.
-            // Don't grind coarser (loses body), instead Lower Ratio.
-            rec.type = ADJUSTMENT_TYPE.RATIO;
-            rec.message = "Decrease Yield (Shorter Ratio).";
-            rec.detail = "Cut the shot earlier. This keeps the body (texture) but avoids the late bitter compounds.";
-        } else {
-            // Default
-            rec.message = "Grind Coarser.";
-            rec.detail = "Extract less to reduce dryness and heavy notes.";
-
-            if (hasTime) {
-                const t = parseFloat(time);
-                if (!isFilter && t > 35) {
-                    rec.detail = `Shot was slow (${t}s). Grinding coarser will speed it up.`;
-                }
-            }
-        }
-    }
-
-    // =========================================================
-    // HOLLOW (Weak Body)
+    // HOLLOW (Lacks Body)
     // =========================================================
     else if (taste === TASTE_PROFILE.HOLLOW) {
-        rec.type = ADJUSTMENT_TYPE.RATIO;
         rec.icon = "ghost";
-
-        if (goal === TASTE_GOAL.SWEET) {
-            // Hollow + wants Sweet = Needs more stuff dissolved properly.
-            rec.type = ADJUSTMENT_TYPE.GRIND;
-            rec.message = "Grind Finer.";
-            rec.detail = "You need more solubility to get sweetness and presence.";
-        } else {
-            rec.message = "Increase Dose (More Coffee).";
-            rec.detail = "More coffee = more body. Keep the same ratio, just scale up.";
-        }
-    }
-
-    // =========================================================
-    // ASTRINGENT (Channeling)
-    // =========================================================
-    else if (taste === TASTE_PROFILE.ASTRINGENT) {
-        rec.type = ADJUSTMENT_TYPE.GRIND;
-        rec.icon = "cactus";
-        rec.message = "Check for Channeling.";
-        rec.detail = "Dryness often comes from uneven flow (channeling). Improve puck prep (WDT).";
-
-        if (goal === TASTE_GOAL.SWEET) {
-            rec.message = "Grind Coarser.";
-            rec.detail = "You might be grinding too fine, causing channeling which ruins sweetness. Back off a bit.";
-        }
-    }
-
-    // =========================================================
-    else if (taste === TASTE_PROFILE.WEAK) {
         rec.type = ADJUSTMENT_TYPE.RATIO;
-        rec.icon = "water";
-
-        if (goal === TASTE_GOAL.SWEET) {
-            // Weak + NOT Sweet usually means under-extracted channel
-            rec.type = ADJUSTMENT_TYPE.GRIND;
-            rec.message = "Grind Finer.";
-            rec.detail = "The coffee is weak because it's not extracting enough. Fine up to get more sugar.";
-        } else if (goal === TASTE_GOAL.ACIDIC) {
-            rec.message = "Use Less Water (Shorter Ratio).";
-            rec.detail = "Concentrate the acids by using less water (e.g. 1:15 ratio).";
-        } else {
-            // Default / Body
-            rec.message = "Increase Dose (More Coffee).";
-            rec.detail = "Or you can try grinding finer to extract more strength.";
-        }
+        rec.message = "Increase Dose (More Coffee).";
+        rec.detail = "Hollow means lack of substance. Add more coffee to the basket to increase resistance and body.";
     }
+
+    // =========================================================
+    // STRONG (Overpowering)
+    // =========================================================
     else if (taste === TASTE_PROFILE.STRONG) {
-        rec.type = ADJUSTMENT_TYPE.RATIO;
         rec.icon = "muscle";
-
-        if (goal === TASTE_GOAL.SWEET || goal === TASTE_GOAL.ACIDIC) {
-            // Strong + Bad taste = Over-extracted
-            rec.type = ADJUSTMENT_TYPE.GRIND;
-            rec.message = "Grind Coarser.";
-            rec.detail = "It's strong because it's over-extracting. Coarsen up to clarify the flavor.";
-        } else {
-            // Just too heavy
-            rec.message = "Decrease Dose (Less Coffee).";
-            rec.detail = "Or use more water (Longer Ratio) to dilute it.";
-        }
+        rec.type = ADJUSTMENT_TYPE.RATIO;
+        rec.message = "Decrease Dose or Increase Yield.";
+        rec.detail = "Too intense. Dilute it by adding more water (Yield) or using less coffee.";
     }
 
     return rec;
