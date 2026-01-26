@@ -37,19 +37,20 @@ export const ADJUSTMENT_TYPE = {
  * @param {object} params - { dose, yield, time, method, goal }
  */
 export function getRecommendation(taste, params = {}) {
-    const { dose, yield: yieldValue, time, method = 'espresso', goal = TASTE_GOAL.FIX_IT } = params;
+    const { dose, yield: yieldValue, time, temp, method = 'espresso', goal = TASTE_GOAL.FIX_IT } = params;
     const isFilter = method === 'filter';
     const hasTime = time && parseFloat(time) > 0;
+    const temperature = temp ? parseFloat(temp) : null;
 
     let rec = {
         type: ADJUSTMENT_TYPE.NONE,
         message: "Keep tasting...",
-        icon: "☕",
+        icon: "coffee",
         detail: ""
     };
 
     if (taste === TASTE_PROFILE.BALANCED) {
-        return { type: ADJUSTMENT_TYPE.NONE, message: "Perfect! Enjoy.", icon: "✨" };
+        return { type: ADJUSTMENT_TYPE.NONE, message: "Perfect! Enjoy.", icon: "magic" };
     }
 
     // Helper for "Just Fix It" vs Specific Goals
@@ -60,7 +61,7 @@ export function getRecommendation(taste, params = {}) {
     if (taste === TASTE_PROFILE.SALTY) {
         rec.icon = "Salt"; // Emoji placeholder, will use text if not mapped
         rec.type = ADJUSTMENT_TYPE.RATIO;
-        rec.icon = "🧂";
+        rec.icon = "salt";
 
         if (goal === TASTE_GOAL.ACIDIC) {
             // User wants Acidic/Fruity. Salty means we are severely under, but we don't want to kill the acid.
@@ -76,7 +77,14 @@ export function getRecommendation(taste, params = {}) {
             // Default Fix
             rec.message = "Increase Yield (More Water).";
             rec.detail = "Saltiness is early extraction. Run the shot longer to balance it out.";
-            if (isFilter) rec.message = "Grind Finer & Hotter Water.";
+            if (isFilter) {
+                if (temperature && temperature < 93) {
+                    rec.message = "Increase Water Temp & Grind Finer.";
+                    rec.detail = `Your water (${temperature}°C) might be too cool to extract properly. Try 96°C+.`;
+                } else {
+                    rec.message = "Grind Finer & Hotter Water.";
+                }
+            }
         }
     }
 
@@ -85,7 +93,15 @@ export function getRecommendation(taste, params = {}) {
     // =========================================================
     else if (taste === TASTE_PROFILE.SOUR) {
         rec.type = ADJUSTMENT_TYPE.GRIND;
-        rec.icon = "🍋";
+        rec.icon = "lemon";
+
+        // Check Temp for Filter first
+        if (isFilter && temperature && temperature < 93) {
+            rec.type = ADJUSTMENT_TYPE.TEMP;
+            rec.message = "Increase Water Temperature.";
+            rec.detail = `Sourness in filter often comes from low temp. You are at ${temperature}°C. Try increasing to 96°C or boiling before grinding finer.`;
+            return rec; // Priority exit
+        }
 
         if (goal === TASTE_GOAL.BODY) {
             // Wants Body, but is Sour. 
@@ -99,7 +115,7 @@ export function getRecommendation(taste, params = {}) {
         } else {
             // Default
             rec.message = "Grind Finer.";
-            rec.detail = isFilter ? "Use hotter water or agitate more." : "Or increase yield slightly.";
+            rec.detail = isFilter ? "Use hotter water (or boil) or agitate more." : "Or increase yield slightly.";
 
             if (hasTime) {
                 const t = parseFloat(time);
@@ -115,7 +131,15 @@ export function getRecommendation(taste, params = {}) {
     // =========================================================
     else if (taste === TASTE_PROFILE.BITTER) {
         rec.type = ADJUSTMENT_TYPE.GRIND;
-        rec.icon = "🍫";
+        rec.icon = "chocolate";
+
+        // Check Temp for Filter
+        if (isFilter && temperature && temperature >= 96) {
+            rec.type = ADJUSTMENT_TYPE.TEMP;
+            rec.message = "Decrease Water Temperature.";
+            rec.detail = `You are brewing very hot (${temperature}°C). Drop to 90-93°C to reduce bitterness.`;
+            return rec;
+        }
 
         if (goal === TASTE_GOAL.ACIDIC) {
             // User wants Acid, has Bitter. Major over-extraction.
@@ -146,7 +170,7 @@ export function getRecommendation(taste, params = {}) {
     // =========================================================
     else if (taste === TASTE_PROFILE.HOLLOW) {
         rec.type = ADJUSTMENT_TYPE.RATIO;
-        rec.icon = "👻";
+        rec.icon = "ghost";
 
         if (goal === TASTE_GOAL.SWEET) {
             // Hollow + wants Sweet = Needs more stuff dissolved properly.
@@ -164,7 +188,7 @@ export function getRecommendation(taste, params = {}) {
     // =========================================================
     else if (taste === TASTE_PROFILE.ASTRINGENT) {
         rec.type = ADJUSTMENT_TYPE.GRIND;
-        rec.icon = "🌵";
+        rec.icon = "cactus";
         rec.message = "Check for Channeling.";
         rec.detail = "Dryness often comes from uneven flow (channeling). Improve puck prep (WDT).";
 
@@ -177,7 +201,7 @@ export function getRecommendation(taste, params = {}) {
     // =========================================================
     else if (taste === TASTE_PROFILE.WEAK) {
         rec.type = ADJUSTMENT_TYPE.RATIO;
-        rec.icon = "💧";
+        rec.icon = "water";
 
         if (goal === TASTE_GOAL.SWEET) {
             // Weak + NOT Sweet usually means under-extracted channel
@@ -195,7 +219,7 @@ export function getRecommendation(taste, params = {}) {
     }
     else if (taste === TASTE_PROFILE.STRONG) {
         rec.type = ADJUSTMENT_TYPE.RATIO;
-        rec.icon = "🥊";
+        rec.icon = "muscle";
 
         if (goal === TASTE_GOAL.SWEET || goal === TASTE_GOAL.ACIDIC) {
             // Strong + Bad taste = Over-extracted

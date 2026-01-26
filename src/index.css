@@ -1,35 +1,61 @@
 :root {
-  /* Colors */
-  --bg-base: #121212;
-  --bg-surface: #1E1E1E;
+  /* Colors - Palette: 003049, D62828, F77F00, FCBF49, EAE2B7 */
 
-  /* Vibrant Tastes */
-  --sour: #FFD700;
-  /* Gold/Yellow */
-  --bitter: #D84315;
-  /* Deep Orange/Red (More visible than brown) */
-  --weak: #00B0FF;
-  /* Bright Blue */
-  --strong: #76FF03;
-  /* Neon Green (or maybe purple for separate logic? Let's stick to plan: Purple/Red) */
-  --strong-color: #D500F9;
-  /* Purple */
+  /* Base */
+  --bg-base: #003049;
+  /* Deep Space Blue */
+  --bg-surface: #00283D;
+  /* Darker Blue */
 
-  --ok: #00E676;
-  /* Bright Green */
+  --bg-surface-hover: #004569;
+  /* Light Blue Hover */
 
-  --text-main: #FFFFFF;
-  --text-secondary: #B0BEC5;
-  --divider: #37474F;
+  --text-main: #EAE2B7;
+  /* Vanilla Custard */
+  --text-secondary: #B8B291;
+  /* Muted Vanilla */
+
+  --divider: #EAE2B7;
+
+  /* Brand / Action */
+  --primary: #F77F00;
+  /* Orange */
+  --accent: #FCBF49;
+  /* Yellow/Amber */
+
+  /* Tastes */
+  --sour: #FCBF49;
+  /* Yellow/Amber */
+  --bitter: #D62828;
+  /* Red */
+  --salty: #457B9D;
+  /* Steel Blue (Custom addition to fit) */
+  --sweet: #F77F00;
+  /* Orange */
+
+  --weak: #8D99AE;
+  /* Muted Blue/Grey */
+  --strong: #D62828;
+  /* Red */
+
+  /* Status */
+  --ok: #2A9D8F;
+  /* Teal/Green (Custom to fit) */
 
   /* Typography */
-  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-main: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
 
   /* Spacing */
   --spacing-s: 8px;
   --spacing-m: 16px;
   --spacing-l: 24px;
   --spacing-xl: 32px;
+
+  /* UI */
+  --radius-s: 8px;
+  --radius-m: 16px;
+  --radius-l: 24px;
+  --border-width: 2px;
 }
 
 * {
@@ -50,18 +76,21 @@ h1,
 h2,
 h3 {
   margin: 0;
-  font-weight: 600;
+  font-weight: 800;
+  /* Bolder headings */
   letter-spacing: -0.02em;
+  color: var(--text-main);
+  text-transform: uppercase;
 }
 
 button {
   cursor: pointer;
   font-family: inherit;
+  color: var(--text-main);
 }
 
 .container {
   max-width: 480px;
-  /* Mobile first */
   margin: 0 auto;
   min-height: 100vh;
   padding: var(--spacing-m);

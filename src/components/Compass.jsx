@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getRecommendation, TASTE_PROFILE, TASTE_GOAL } from '../lib/coffee-logic';
 import { RecipeInput } from './RecipeInput';
 import { History } from './History';
+import { Icon } from './Icon';
 
 export function Compass() {
   const [method, setMethod] = useState('espresso'); // 'espresso' or 'filter'
@@ -13,6 +14,7 @@ export function Compass() {
   const [dose, setDose] = useState('');
   const [yieldValue, setYieldValue] = useState('');
   const [time, setTime] = useState('');
+  const [temperature, setTemperature] = useState(''); // New state for Temp
   const [coffeeName, setCoffeeName] = useState('');
 
   // History State
@@ -45,6 +47,7 @@ export function Compass() {
       dose,
       yield: yieldValue,
       time,
+      temperature, // Save temp
       taste,
       preference
     };
@@ -61,7 +64,7 @@ export function Compass() {
     setMethod(newMethod);
     // If we have a rec, update it live
     if (recommendation) {
-      updateRec(taste, preference, newMethod, dose, yieldValue, time);
+      updateRec(taste, preference, newMethod, dose, yieldValue, time, temperature);
     }
   };
 
@@ -69,7 +72,7 @@ export function Compass() {
     setTaste(selectedTaste);
     // Only skip preference if it's Balanced
     if (selectedTaste === TASTE_PROFILE.BALANCED) {
-      updateRec(selectedTaste, null, method, dose, yieldValue, time);
+      updateRec(selectedTaste, null, method, dose, yieldValue, time, temperature);
     } else {
       // Go to Preference Step for everything else (including Weak/Strong)
       setPreference(null);
@@ -79,11 +82,11 @@ export function Compass() {
 
   const handlePreferenceSelect = (selectedGoal) => {
     setPreference(selectedGoal);
-    updateRec(taste, selectedGoal, method, dose, yieldValue, time);
+    updateRec(taste, selectedGoal, method, dose, yieldValue, time, temperature);
   }
 
-  const updateRec = (t, g, m, d, y, tm) => {
-    const rec = getRecommendation(t, { dose: d, yield: y, time: tm, method: m, goal: g });
+  const updateRec = (t, g, m, d, y, tm, temp) => {
+    const rec = getRecommendation(t, { dose: d, yield: y, time: tm, temp, method: m, goal: g });
     if (rec) {
       setRecommendation(rec);
     }
@@ -92,13 +95,14 @@ export function Compass() {
   // Update logic when inputs change if we already have a rec
   const handleInputChange = (field, value) => {
     // Store temp values
-    let d = dose, y = yieldValue, t = time;
+    let d = dose, y = yieldValue, t = time, temp = temperature;
     if (field === 'dose') { setDose(value); d = value; }
     if (field === 'yield') { setYieldValue(value); y = value; }
     if (field === 'time') { setTime(value); t = value; }
+    if (field === 'temperature') { setTemperature(value); temp = value; }
 
     if (recommendation) {
-      updateRec(taste, preference, method, d, y, t);
+      updateRec(taste, preference, method, d, y, t, temp);
     }
   }
 
@@ -129,10 +133,12 @@ export function Compass() {
         dose={dose}
         yield={yieldValue}
         time={time}
+        temperature={temperature}
         coffeeName={coffeeName}
         onDoseChange={(v) => handleInputChange('dose', v)}
         onYieldChange={(v) => handleInputChange('yield', v)}
         onTimeChange={(v) => handleInputChange('time', v)}
+        onTemperatureChange={(v) => handleInputChange('temperature', v)}
         onNameChange={setCoffeeName}
         method={method}
       />
@@ -146,13 +152,13 @@ export function Compass() {
             <button
               className="taste-btn sour"
               onClick={() => handleTasteSelect(TASTE_PROFILE.SOUR)}>
-              <span className="emoji">🍋</span>
+              <Icon name="sour" />
               <span className="label">Sour</span>
             </button>
             <button
               className="taste-btn bitter"
               onClick={() => handleTasteSelect(TASTE_PROFILE.BITTER)}>
-              <span className="emoji">🍫</span>
+              <Icon name="bitter" />
               <span className="label">Bitter</span>
             </button>
 
@@ -160,13 +166,13 @@ export function Compass() {
             <button
               className="taste-btn salty"
               onClick={() => handleTasteSelect(TASTE_PROFILE.SALTY)}>
-              <span className="emoji">🧂</span>
+              <Icon name="salty" />
               <span className="label">Salty</span>
             </button>
             <button
               className="taste-btn astringent"
               onClick={() => handleTasteSelect(TASTE_PROFILE.ASTRINGENT)}>
-              <span className="emoji">🌵</span>
+              <Icon name="astringent" />
               <span className="label">Dry / Astr.</span>
             </button>
 
@@ -174,13 +180,13 @@ export function Compass() {
             <button
               className="taste-btn weak"
               onClick={() => handleTasteSelect(TASTE_PROFILE.WEAK)}>
-              <span className="emoji">💧</span>
+              <Icon name="weak" />
               <span className="label">Weak</span>
             </button>
             <button
               className="taste-btn strong"
               onClick={() => handleTasteSelect(TASTE_PROFILE.STRONG)}>
-              <span className="emoji">🥊</span>
+              <Icon name="strong" />
               <span className="label">Strong</span>
             </button>
 
@@ -188,7 +194,7 @@ export function Compass() {
             <button
               className="taste-btn hollow"
               onClick={() => handleTasteSelect(TASTE_PROFILE.HOLLOW)}>
-              <span className="emoji">👻</span>
+              <Icon name="hollow" />
               <span className="label">Hollow / Empty</span>
             </button>
           </div>
@@ -203,25 +209,25 @@ export function Compass() {
             <button
               className="taste-btn pref-acidic"
               onClick={() => handlePreferenceSelect(TASTE_GOAL.ACIDIC)}>
-              <span className="emoji">🍋</span>
+              <Icon name="acidic" />
               <span className="label">More Fruity / Acidic</span>
             </button>
             <button
               className="taste-btn pref-sweet"
               onClick={() => handlePreferenceSelect(TASTE_GOAL.SWEET)}>
-              <span className="emoji">🍯</span>
+              <Icon name="sweet" />
               <span className="label">More Sweetness</span>
             </button>
             <button
               className="taste-btn pref-body"
               onClick={() => handlePreferenceSelect(TASTE_GOAL.BODY)}>
-              <span className="emoji">🍫</span>
+              <Icon name="body" />
               <span className="label">More Body</span>
             </button>
             <button
               className="taste-btn pref-fix"
               onClick={() => handlePreferenceSelect(TASTE_GOAL.FIX_IT)}>
-              <span className="emoji">🛠️</span>
+              <Icon name="fix" />
               <span className="label">Just Fix the Taste</span>
             </button>
           </div>
@@ -236,12 +242,14 @@ export function Compass() {
         <div className="result-section">
           <div className="result-card">
             <div className="method-badge">{method === 'espresso' ? 'Espresso' : 'Filter'} Advice</div>
-            <div className="icon">{recommendation.icon}</div>
+            <div className="icon">
+              <Icon name={recommendation.icon || 'default'} className="icon-svg big" />
+            </div>
             <h3>{recommendation.message}</h3>
             {recommendation.detail && <p className="detail">{recommendation.detail}</p>}
 
             <button className="save-btn" onClick={saveLog}>
-              💾 Save Log
+              Save Log
             </button>
           </div>
 
@@ -256,29 +264,29 @@ export function Compass() {
       <style>{`
         .method-selector {
           display: flex;
-          background: var(--bg-surface);
-          padding: 4px;
-          border-radius: 12px;
+          background: transparent;
+          gap: 12px;
           margin-bottom: var(--spacing-l);
-          border: 1px solid var(--divider);
         }
 
         .method-btn {
           flex: 1;
-          padding: 10px;
+          padding: 12px;
           background: transparent;
           color: var(--text-secondary);
-          border: none;
-          border-radius: 8px;
-          font-weight: 600;
+          border: var(--border-width) solid var(--divider);
+          border-radius: var(--radius-m);
+          font-weight: 700;
+          text-transform: uppercase;
           transition: all 0.2s;
+          opacity: 0.7;
         }
 
         .method-btn.active {
-          background: var(--bg-surface);
-          background: var(--primary);
-          color: #000;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          background: var(--text-main); /* Blue */
+          color: var(--bg-base); /* Beige */
+          border-color: var(--text-main);
+          opacity: 1;
         }
 
         .question-section {
@@ -289,14 +297,15 @@ export function Compass() {
         h2 {
            text-align: center;
            margin-bottom: var(--spacing-l);
-           font-size: 1.5rem;
+           font-size: 1.2rem;
            color: var(--text-main);
+           opacity: 0.8;
         }
 
         .taste-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: var(--spacing-s); /* Tighter gap for more buttons */
+          gap: var(--spacing-m);
           width: 100%;
         }
 
@@ -305,50 +314,56 @@ export function Compass() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          min-height: 100px; 
+          min-height: 120px; 
           padding: var(--spacing-m);
-          border: none;
-          border-radius: 16px;
-          color: #121212; 
+          border: var(--border-width) solid var(--divider);
+          border-radius: var(--radius-l);
+          background: var(--bg-surface);
+          color: var(--text-main);
           font-weight: 700;
-          font-size: 1rem; /* Slightly smaller text */
-          transition: transform 0.1s;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+          font-size: 0.9rem;
+          transition: transform 0.1s, background-color 0.2s;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
         
         .taste-btn:active {
-          transform: scale(0.96);
+          transform: scale(0.98);
         }
-
-        .taste-btn .emoji {
-          font-size: 2rem;
-          margin-bottom: 4px;
-        }
-
-        /* Specific Colors */
-        .taste-btn.sour { background: var(--sour); }
-        .taste-btn.bitter { background: var(--bitter); color: white; }
-        .taste-btn.weak { background: var(--weak); }
-        .taste-btn.strong { background: var(--strong-color); color: white; }
         
-        /* New Advanced Colors */
-        .taste-btn.salty { background: #4DB6AC; /* Teal */ }
-        .taste-btn.astringent { background: #D7CCC8; /* Beige/Sand */ }
+        .taste-btn:hover {
+            background: var(--bg-surface-hover);
+            border-color: var(--text-main);
+        }
+
+        .icon-svg {
+          width: 48px;
+          height: 48px;
+          margin-bottom: 12px;
+          stroke: var(--text-main);
+        }
+        
+        .icon-svg.big {
+            width: 80px;
+            height: 80px;
+        }
+
+        /* Specific Colors for BUTTON BORDERS or ACCENTS if needed, 
+           but currently using cleaner uniform look with hover colors */
+
+        .taste-btn.sour { border-color: var(--sour); }
+        .taste-btn.bitter { border-color: var(--bitter); }
+        .taste-btn.strong { border-color: var(--strong); }
+        .taste-btn.weak { border-color: var(--weak); }
         
         .taste-btn.hollow { 
            grid-column: span 2;
-           background: #90A4AE; /* Blue Grey */ 
            flex-direction: row;
            gap: var(--spacing-m);
+           min-height: 80px;
         }
-        .taste-btn.hollow .emoji { margin-bottom: 0; }
+        .taste-btn.hollow .icon-svg { margin-bottom: 0; width: 32px; height: 32px;}
         
-        /* PREFERENCE BUTTONS */
-        .pref-acidic { background: #FFEB3B; }
-        .pref-sweet { background: #FF9800; }
-        .pref-body { background: #795548; color: white;}
-        .pref-fix { background: var(--divider); color: white; }
-
         /* Result Section */
         .result-section {
           display: flex;
@@ -360,71 +375,73 @@ export function Compass() {
         }
 
         .result-card {
-          background: var(--bg-surface);
-          border: 1px solid var(--divider);
+          background: var(--text-main); /* Blue Card */
+          color: var(--bg-base);       /* Beige Text */
+          border: var(--border-width) solid var(--text-main);
           border-radius: 20px;
           padding: var(--spacing-xl);
           text-align: center;
           width: 100%;
-          box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+          box-shadow: 12px 12px 0px rgba(0,0,0,0.2); /* Brutalist shadow */
+        }
+        
+        .result-card .icon-svg {
+            stroke: var(--bg-base); /* Beige Icon */
+        }
+        
+        .result-card h3 {
+            color: var(--primary); /* Orange Heading */
+            font-size: 2rem;
+            margin-bottom: var(--spacing-m);
+        }
+        
+        .result-card .detail {
+            color: var(--bg-base);
+            opacity: 0.9;
+            font-size: 1.1rem;
         }
         
         .method-badge {
           display: inline-block;
-          padding: 4px 12px;
-          border-radius: 12px;
-          background: var(--divider);
-          color: var(--text-secondary);
-          font-size: 0.8rem;
+          padding: 6px 16px;
+          border-radius: 50px;
+          background: var(--bg-surface-hover); /* Amber */
+          color: var(--text-main);
+          font-weight: 800;
+          font-size: 0.75rem;
           margin-bottom: var(--spacing-m);
           text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .result-section .icon {
-          font-size: 5rem;
-          margin-bottom: var(--spacing-m);
-        }
-
-        .result-section h3 {
-          font-size: 1.8rem;
-          margin-bottom: var(--spacing-s);
-          color: var(--text-main);
-        }
-
-        .detail {
-          color: var(--text-secondary);
-          font-size: 1rem;
-          line-height: 1.6;
+          letter-spacing: 0.1em;
         }
 
         .reset-btn {
           width: 100%;
-          padding: 20px;
+          padding: 24px;
           background: transparent;
           color: var(--text-main);
-          border: 2px solid var(--divider);
+          border: var(--border-width) solid var(--text-main);
           border-radius: 16px;
-          font-size: 1rem;
-          font-weight: 600;
+          font-size: 1.1rem;
+          font-weight: 800;
+          text-transform: uppercase;
         }
         
-        .reset-btn:active {
-           background: var(--divider);
+        .reset-btn:hover {
+           background: var(--bg-surface-hover);
         }
 
         .save-btn {
-           margin-top: var(--spacing-m);
-           background: var(--ok);
-           border: none;
-           padding: 8px 16px;
+           margin-top: var(--spacing-l);
+           background: var(--primary);
+           border: 2px solid var(--text-main); /* Border for definition */
+           padding: 12px 24px;
            border-radius: 8px;
-           font-weight: bold;
-           color: #000;
+           font-weight: 800;
+           color: var(--text-main);
+           text-transform: uppercase;
            cursor: pointer;
+           width: 100%;
         }
-
-        .save-btn:active { transform: scale(0.95); }
            
         .back-btn {
             margin-top: var(--spacing-m);
@@ -433,6 +450,12 @@ export function Compass() {
             color: var(--text-secondary);
             width: 100%;
             padding: 10px;
+            font-weight: 600;
+        }
+        
+        .back-btn:hover {
+            color: var(--text-main);
+            text-decoration: underline;
         }
 
         @keyframes fadeIn {
